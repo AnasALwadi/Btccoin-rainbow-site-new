@@ -56,7 +56,7 @@ async function getBitcoinStage() {
 
     const now = new Date();
     priceEl.textContent =
-      Price: ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT • Updated: ${now.toLocaleTimeString()};
+      `Price: ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT • Updated: ${now.toLocaleTimeString()}`;
 
     // 2) جلب CSV من Google Sheets
     const resSheet = await fetch(cacheBust(sheetCSV), { cache: "no-store" });
@@ -105,3 +105,4 @@ setInterval(() => location.reload(), 300000);
 
 </body>
 </html>
+
