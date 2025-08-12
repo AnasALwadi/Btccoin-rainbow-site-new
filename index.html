@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bitcoin Rainbow Chart from Google Sheets</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #111; color: #fff; }
+  .stage { font-size: 2em; margin-top: 20px; padding: 10px; border-radius: 8px; display: inline-block; min-width: 300px; }
+</style>
+</head>
+<body>
+
+<h1>Bitcoin Rainbow Chart Stage (from Google Sheets)</h1>
+<div id="price">Loading price...</div>
+<div id="stage" class="stage">Loading stage...</div>
+
+<script>
+
+const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-BxUEi7xMXa6RHpZGBRppJLRycTxcmPCEaV4ieAvWtyIZdr9_pyj4CounQ-X37-W9ez1Ra395Y036/pub?gid=0&single=true&output=csv ";
+
+
+async function getBitcoinStage() {
+    // جلب سعر البيتكوين من API مجاني
+    const resPrice = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+    const dataPrice = await resPrice.json();
+    const price = dataPrice.bitcoin.usd;
+    document.getElementById("price").innerText = "Price: $" + price.toLocaleString();
+
+    // جلب جدول بيانات Rainbow من Google Sheets بصيغة CSV
+    const resSheet = await fetch(sheetCSV);
+    const csvText = await resSheet.text();
+
+    // تحويل CSV إلى مصفوفة من الصفوف
+    const rows = csvText.trim().split("\n").map(row => row.split(","));
+
+    // تجاهل صف العناوين وابدأ من الصف الأول للبيانات
+    const dataRows = rows.slice(1);
+
+    // ابحث المرحلة المناسبة حسب السعر
+    let stage = "No Stage Found";
+    let bgColor = "#000";
+    let textColor = "#fff";
+
+    for (const row of dataRows) {
+        const minPrice = Number(row[0]);
+        const maxPrice = Number(row[1]);
+        const stageName = row[2];
+        const color = row[3];
+        const txtColor = row[4];
+
+        if (price >= minPrice && price < maxPrice) {
+            stage = stageName;
+            bgColor = color;
+            textColor = txtColor;
+            break;
+        }
+    }
+
+    const stageDiv = document.getElementById("stage");
+    stageDiv.innerText = stage;
+    stageDiv.style.backgroundColor = bgColor;
+    stageDiv.style.color = textColor;
+}
+
+getBitcoinStage();
+setInterval(getBitcoinStage, 60000);
+</script>
+
+</body>
+</html>
