@@ -24,10 +24,10 @@
 
 <div class="wrap">
   <div class="card">
-    <h1>Bitcoin Rainbow Chart Stage (from Google Sheets)</h1>
+    <h1>Bitcoin Rainbow Chart Stage</h1>
     <div id="price">Loading price…</div>
     <div id="stage" class="stage">Loading stage…</div>
-    <div class="footer">Auto-refresh every 5 sec • Hard refresh every 5 min</div>
+    <div class="footer">Auto-refresh every 5 sec • Hard refresh every 1 min</div>
   </div>
 </div>
 
@@ -100,9 +100,10 @@ getBitcoinStage();
 setInterval(getBitcoinStage, 5000);
 
 // إعادة تحميل كاملة كل 5 دقائق (مفيد داخل Notion/iframes)
-setInterval(() => location.reload(), 300000);
+setInterval(() => location.reload(), 60000);
 </script>
 
 </body>
 </html>
+
 
