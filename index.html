@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Bitcoin Rainbow Chart from Google Sheets</title>
 
-<!-- منع الكاش -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -28,7 +27,7 @@
     <h1>Bitcoin Rainbow Chart Stage (from Google Sheets)</h1>
     <div id="price">Loading price…</div>
     <div id="stage" class="stage">Loading stage…</div>
-    <div class="footer">Auto-refresh every 5 sec • Hard refresh every 1 min</div>
+    <div class="footer">Auto-refresh every 5 sec • Hard refresh every 5 min</div>
   </div>
 </div>
 
@@ -36,34 +35,36 @@
 // رابط CSV المنشور من Google Sheets
 const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-BxUEi7xMXa6RHpZGBRppJLRycTxcmPCEaV4ieAvWtyIZdr9_pyj4CounQ-X37-W9ez1Ra395Y036/pub?gid=0&single=true&output=csv";
 
-const PRICE_URL = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT";
+// ✅ CryptoCompare API: BTC مقابل USDT
+const PRICE_URL = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USDT";
 
 const priceEl = document.getElementById("price");
 const stageEl = document.getElementById("stage");
 
-// دالة لكسر الكاش
+// كسر الكاش
 function cacheBust(url) {
   return url + (url.includes("?") ? "&" : "?") + "t=" + Date.now();
 }
 
 async function getBitcoinStage() {
   try {
-    // جلب سعر البيتكوين
+    // 1) السعر من CryptoCompare
     const resPrice = await fetch(cacheBust(PRICE_URL), { cache: "no-store" });
     const dataPrice = await resPrice.json();
-    const price = parseFloat(dataPrice.price);
-
-    if (typeof price !== "number") throw new Error("Price fetch failed");
+    const price = Number(dataPrice?.USDT);
+    if (!Number.isFinite(price)) throw new Error("Price fetch failed");
 
     const now = new Date();
-    priceEl.textContent = `Price: $${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • Updated: ${now.toLocaleTimeString()}`;
+    priceEl.textContent =
+      Price: ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT • Updated: ${now.toLocaleTimeString()};
 
-    // جلب بيانات المراحل من Google Sheets
+    // 2) جلب CSV من Google Sheets
     const resSheet = await fetch(cacheBust(sheetCSV), { cache: "no-store" });
     const csvText = await resSheet.text();
 
-    const rows = csvText.trim().split("\n").map(row => row.replace(/^"|"$/g, "").split(","));
-    const dataRows = rows.slice(1); // تخطي العناوين
+    // parsing بسيط (لو عندك فواصل داخل خلايا غيّر لطريقة parsing المتقدمة)
+    const rows = csvText.trim().split("\n").map(r => r.replace(/^"|"$/g, "").split(","));
+    const dataRows = rows.slice(1);
 
     let stage = "No Stage Found";
     let bgColor = "#000";
@@ -98,12 +99,9 @@ async function getBitcoinStage() {
 getBitcoinStage();
 setInterval(getBitcoinStage, 5000);
 
-// إعادة تحميل كاملة كل 5 دقائق
-setInterval(() => location.reload(), 60000);
+// إعادة تحميل كاملة كل 5 دقائق (مفيد داخل Notion/iframes)
+setInterval(() => location.reload(), 300000);
 </script>
 
 </body>
 </html>
-
-
-
