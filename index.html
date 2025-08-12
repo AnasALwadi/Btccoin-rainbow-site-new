@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Bitcoin Rainbow Chart from Google Sheets</title>
 
+<!-- منع الكاش -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -15,10 +16,9 @@
   .wrap { display:flex; align-items:center; justify-content:center; min-height: 70vh; padding: 24px; }
   .card { width: min(92vw, var(--card-max)); background:#1a1a1a; border-radius:16px; padding:24px; box-shadow: 0 10px 30px rgba(0,0,0,.35); text-align:center; }
   h1 { margin: 0 0 16px; font-size: clamp(18px, 3.8vw, 28px); color:#ddd; }
-  #price { font-size: clamp(14px, 2.8vw, 16px); color:#aaa; margin-bottom: 18px; white-space: pre-wrap; }
+  #price { font-size: clamp(14px, 2.8vw, 16px); color:#aaa; margin-bottom: 18px; }
   .stage { font-size: clamp(22px, 5.5vw, 34px); font-weight: 700; padding: 16px 20px; border-radius: 12px; display:inline-block; min-width: 260px; }
   .footer { margin-top:14px; font-size:12px; color:#888; }
-  .err { color:#f88; }
 </style>
 </head>
 <body>
@@ -28,98 +28,53 @@
     <h1>Bitcoin Rainbow Chart Stage (from Google Sheets)</h1>
     <div id="price">Loading price…</div>
     <div id="stage" class="stage">Loading stage…</div>
-    <div id="foot" class="footer">Auto-refresh every 5 sec • Hard refresh every 1 min</div>
+    <div class="footer">Auto-refresh every 5 sec • Hard refresh every 1 min</div>
   </div>
 </div>
 
 <script>
 // رابط CSV المنشور من Google Sheets
 const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-BxUEi7xMXa6RHpZGBRppJLRycTxcmPCEaV4ieAvWtyIZdr9_pyj4CounQ-X37-W9ez1Ra395Y036/pub?gid=0&single=true&output=csv";
+
 const PRICE_URL = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
 
 const priceEl = document.getElementById("price");
 const stageEl = document.getElementById("stage");
-const footEl  = document.getElementById("foot");
 
-// كسر الكاش
+// دالة لكسر الكاش
 function cacheBust(url) {
   return url + (url.includes("?") ? "&" : "?") + "t=" + Date.now();
 }
 
-// محلّل CSV بسيط يدعم الفواصل داخل الاقتباسات
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let cell = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-
-    if (ch === '"') {
-      // تعامل مع "" داخل الخلية كمحرف اقتباس واحد
-      if (inQuotes && text[i + 1] === '"') {
-        cell += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (ch === ',' && !inQuotes) {
-      row.push(cell);
-      cell = "";
-    } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
-      // تخطّي \r\n
-      if (ch === '\r' && text[i + 1] === '\n') i++;
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = "";
-    } else {
-      cell += ch;
-    }
-  }
-  // آخر خلية/سطر
-  if (cell.length > 0 || row.length > 0) {
-    row.push(cell);
-    rows.push(row);
-  }
-  return rows;
-}
-
 async function getBitcoinStage() {
   try {
-    footEl.classList.remove("err");
-    footEl.textContent = "Auto-refresh every 5 sec • Hard refresh every 5 min";
-
-    // 1) السعر
+    // جلب سعر البيتكوين
     const resPrice = await fetch(cacheBust(PRICE_URL), { cache: "no-store" });
     const dataPrice = await resPrice.json();
     const price = dataPrice?.bitcoin?.usd;
+
     if (typeof price !== "number") throw new Error("Price fetch failed");
 
     const now = new Date();
-    const pricePretty = price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    priceEl.textContent = Price: $${pricePretty} • Updated: ${now.toLocaleTimeString()};
+    priceEl.textContent = Price: $${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • Updated: ${now.toLocaleTimeString()};
 
-    // 2) CSV
+    // جلب بيانات المراحل من Google Sheets
     const resSheet = await fetch(cacheBust(sheetCSV), { cache: "no-store" });
     const csvText = await resSheet.text();
-    const rows = parseCSV(csvText).filter(r => r.length && r.some(c => c.trim().length));
 
-    // أول صف عناوين
-    const dataRows = rows.slice(1);
+    const rows = csvText.trim().split("\n").map(row => row.replace(/^"|"$/g, "").split(","));
+    const dataRows = rows.slice(1); // تخطي العناوين
 
     let stage = "No Stage Found";
     let bgColor = "#000";
     let textColor = "#fff";
-for (const r of dataRows) {
-      const minPrice = Number(r[0]);
-      const maxPrice = Number(r[1]);
-      const stageName = r[2];
-      const color = r[3];
-      const txtColor = r[4];
 
-      if (!Number.isFinite(minPrice) || !Number.isFinite(maxPrice)) continue;
+    for (const row of dataRows) {
+      const minPrice = Number(row[0]);
+      const maxPrice = Number(row[1]);
+      const stageName = row[2];
+      const color = row[3];
+      const txtColor = row[4];
 
       if (price >= minPrice && price < maxPrice) {
         stage = stageName || stage;
@@ -136,17 +91,15 @@ for (const r of dataRows) {
   } catch (err) {
     console.error(err);
     stageEl.textContent = "Error loading data";
-    footEl.textContent = "Error: " + (err?.message || err);
-    footEl.classList.add("err");
   }
 }
 
 // تحديث كل 5 ثواني
 getBitcoinStage();
-setInterval(getBitcoinStage, 5_000);
+setInterval(getBitcoinStage, 5000);
 
-// إعادة تحميل كاملة كل 1 دقائق (مفيد داخل Notion/iframes)
-setInterval(() => location.reload(), 60_000);
+// إعادة تحميل كاملة كل 5 دقائق
+setInterval(() => location.reload(), 60000);
 </script>
 
 </body>
