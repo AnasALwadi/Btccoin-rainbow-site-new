@@ -36,7 +36,7 @@
 // رابط CSV المنشور من Google Sheets
 const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-BxUEi7xMXa6RHpZGBRppJLRycTxcmPCEaV4ieAvWtyIZdr9_pyj4CounQ-X37-W9ez1Ra395Y036/pub?gid=0&single=true&output=csv";
 
-const PRICE_URL = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+const PRICE_URL = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT";
 
 const priceEl = document.getElementById("price");
 const stageEl = document.getElementById("stage");
@@ -104,4 +104,5 @@ setInterval(() => location.reload(), 60000);
 
 </body>
 </html>
+
 
