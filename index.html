@@ -51,7 +51,7 @@ async function getBitcoinStage() {
     // جلب سعر البيتكوين
     const resPrice = await fetch(cacheBust(PRICE_URL), { cache: "no-store" });
     const dataPrice = await resPrice.json();
-    const price = dataPrice?.bitcoin?.usd;
+    const price = parseFloat(dataPrice.price);
 
     if (typeof price !== "number") throw new Error("Price fetch failed");
 
@@ -104,5 +104,6 @@ setInterval(() => location.reload(), 60000);
 
 </body>
 </html>
+
 
 
